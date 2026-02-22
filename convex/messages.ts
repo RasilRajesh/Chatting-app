@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 export const listByConversation = query({
   args: { conversationId: v.id("conversations") },
@@ -33,13 +34,22 @@ export const send = mutation({
       createdAt: now,
       deleted: false,
     });
-    const preview =
-      trimmed.length > 50 ? trimmed.slice(0, 50) + "…" : trimmed;
     await ctx.db.patch(args.conversationId, {
-      lastMessage: preview,
+      lastMessage: msgId,
       lastMessageTime: now,
     });
     return msgId;
+  },
+});
+
+export const getLastMessage = query({
+  args: { messageId: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      return await ctx.db.get(args.messageId as Id<"messages">);
+    } catch {
+      return null;
+    }
   },
 });
 

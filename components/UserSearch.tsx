@@ -68,7 +68,16 @@ export function UserSearch({
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{user.name}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {user.email}
+                    <span className={cn(
+                      "flex items-center gap-1 text-xs",
+                      user.isOnline ? "text-green-500" : "text-muted-foreground"
+                    )}>
+                      <span className={cn(
+                        "inline-block h-2 w-2 rounded-full",
+                        user.isOnline ? "bg-green-500" : "bg-gray-400"
+                      )} />
+                      {user.isOnline ? "Online" : "Offline"}
+                    </span>
                   </p>
                 </div>
                 {selectedSet.has(user._id) && (

@@ -37,72 +37,75 @@ export function MessageBubble({
   return (
     <div
       className={cn(
-        "flex flex-col gap-0.5 max-w-[85%]",
+        "flex flex-col gap-1 max-w-[85%]",
         isOwn ? "self-end items-end" : "self-start items-start"
       )}
     >
       {showSenderName && sender && !isOwn && (
-        <span className="text-xs font-medium text-muted-foreground px-1">
+        <span className="text-xs font-medium text-muted-foreground px-2">
           {sender.name}
         </span>
       )}
       <div
         className={cn(
-          "group relative rounded-2xl px-4 py-2",
+          "group relative rounded-2xl px-3.5 py-2 shadow-sm",
           isOwn
-            ? "bg-primary text-primary-foreground rounded-br-md"
-            : "bg-muted rounded-bl-md"
+            ? "bg-whatsapp-green-light rounded-br-lg"
+            : "bg-muted rounded-bl-lg",
+          message.deleted && "bg-transparent border border-dashed"
         )}
       >
         <div className="flex items-end gap-2">
-          <p
+          <div
             className={cn(
               "text-sm break-words",
-              message.deleted && "italic text-muted-foreground"
+              message.deleted && "italic text-xs"
             )}
           >
             {message.deleted ? "This message was deleted" : message.content}
-          </p>
-          <div className="flex items-center gap-1 shrink-0">
+          </div>
+          {!message.deleted && (
             <span
               className={cn(
-                "text-[10px] opacity-80",
-                isOwn ? "text-primary-foreground/80" : "text-muted-foreground"
+                "text-[11px] shrink-0 text-muted-foreground/70"
               )}
             >
               {formatMessageTime(message.createdAt)}
             </span>
+          )}
+        </div>
+        {!message.deleted && (
+          <Reactions messageId={message._id} userId={currentUserId} />
+        )}
+        {!message.deleted && (
+          <div className="absolute -top-4 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {canDelete && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-7 w-7 rounded-full"
                   >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align={isOwn ? "end" : "start"}>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() =>
-                      softDelete({ messageId: message._id, senderId: currentUserId })
+                      softDelete({
+                        messageId: message._id,
+                        senderId: currentUserId,
+                      })
                     }
                   >
-                    Delete
+                    Delete Message
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </div>
-        </div>
-        {!message.deleted && (
-          <Reactions
-            messageId={message._id}
-            userId={currentUserId}
-            className={isOwn ? "justify-end" : "justify-start"}
-          />
         )}
       </div>
     </div>

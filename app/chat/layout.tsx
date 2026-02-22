@@ -97,25 +97,23 @@ export default function ChatLayout({
   if (!convexUser) {
     if (timedOut || syncError) {
       return (
-        <div className="flex h-screen items-center justify-center bg-white">
-          <div className="max-w-md rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-800 space-y-3">
-            <p className="font-semibold text-base">Account setup failed</p>
+        <div className="flex h-screen items-center justify-center bg-white p-4">
+          <div className="w-full max-w-md rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
+            <h1 className="text-xl font-semibold text-destructive">
+              Account Sync Failed
+            </h1>
+            <p className="mt-2 text-sm text-destructive-foreground">
+              We couldn't sync your account with our server. This might be a
+              temporary issue.
+            </p>
             {syncError && (
-              <pre className="whitespace-pre-wrap break-all bg-red-100 p-2 rounded text-xs">{syncError}</pre>
+              <pre className="mt-4 whitespace-pre-wrap rounded-md bg-destructive/20 p-2 text-xs text-destructive-foreground">
+                {syncError}
+              </pre>
             )}
-            <p>This usually means the Convex ↔ Clerk JWT integration is not configured. Make sure:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>You created a JWT template named <strong>convex</strong> in Clerk dashboard (using the Convex preset)</li>
-              <li><code className="bg-red-100 px-1 rounded">npx convex dev</code> is running</li>
-              <li>The domain in <code className="bg-red-100 px-1 rounded">convex/auth.config.ts</code> matches your Clerk instance</li>
-            </ol>
             <button
-              onClick={() => {
-                setSyncError(null);
-                setTimedOut(false);
-                syncAttempted.current = false;
-              }}
-              className="mt-2 rounded bg-red-600 px-4 py-1.5 text-white hover:bg-red-700"
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm transition-colors hover:bg-destructive/90"
             >
               Retry
             </button>
@@ -127,7 +125,7 @@ export default function ChatLayout({
       <div className="flex h-screen items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-gray-500 text-sm">Setting up your account…</p>
+          <p className="ml-3 text-sm text-muted-foreground">Syncing account...</p>
         </div>
       </div>
     );
@@ -135,10 +133,10 @@ export default function ChatLayout({
 
   return (
     <ChatProvider currentUser={convexUser}>
-      <div className={cn("flex h-screen bg-background")}>
+      <main className="flex h-screen">
         <Sidebar currentUser={convexUser} />
-        <main className="flex-1 flex flex-col min-w-0">{children}</main>
-      </div>
+        <div className="flex-1 bg-white/50 backdrop-blur-lg">{children}</div>
+      </main>
     </ChatProvider>
   );
 }

@@ -10,15 +10,18 @@ export const listByMessage = query({
       .query("reactions")
       .withIndex("by_messageId", (q) => q.eq("messageId", args.messageId))
       .collect();
-    const byEmoji: Record<string, { count: number; userIds: string[] }> = {};
+    const byEmoji: Record<
+      string,
+      { count: number; userIds: string[]; emoji: string }
+    > = {};
     for (const r of list) {
       if (!byEmoji[r.emoji]) {
-        byEmoji[r.emoji] = { count: 0, userIds: [] };
+        byEmoji[r.emoji] = { count: 0, userIds: [], emoji: r.emoji };
       }
       byEmoji[r.emoji].count += 1;
       byEmoji[r.emoji].userIds.push(r.userId);
     }
-    return byEmoji;
+    return Object.values(byEmoji);
   },
 });
 

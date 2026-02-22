@@ -72,33 +72,44 @@ export function ChatWindow({
     markRead({ conversationId, userId: currentUserId });
   }, [conversationId, currentUserId, markRead]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = useCallback((behavior: "smooth" | "auto" = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
     setAtBottom(true);
     setShowNewButton(false);
   }, []);
 
   useEffect(() => {
     if (!messages || messages.length === 0) return;
-    if (atBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      const prev = prevMessageCountRef.current;
-      if (messages.length > prev && prev > 0) {
-        setShowNewButton(true);
-      }
+
+    const lastMessage = messages[messages.length - 1];
+    const isOwnMessage = lastMessage.senderId === currentUserId;
+    const isNewer = messages.length > prevMessageCountRef.current;
+
+    if (isOwnMessage) {
+      // Always scroll to bottom if we sent the message
+      scrollToBottom("auto");
+    } else if (atBottom) {
+      // Scroll if we're already at the bottom
+      scrollToBottom();
+    } else if (isNewer) {
+      // Show button if new messages arrive and we're scrolled up
+      setShowNewButton(true);
     }
+
     prevMessageCountRef.current = messages.length;
-  }, [messages?.length, atBottom]);
+  }, [messages, atBottom, currentUserId, scrollToBottom]);
 
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
-    const threshold = 100;
+    // A little extra space to ensure it's "at the bottom"
+    const threshold = 120; 
     const atBottomNow =
       el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
     setAtBottom(atBottomNow);
-    if (atBottomNow) setShowNewButton(false);
+    if (atBottomNow) {
+      setShowNewButton(false);
+    }
   }, []);
 
   const handleSend = async () => {
@@ -113,7 +124,8 @@ export function ChatWindow({
         senderId: currentUserId,
         content: trimmed,
       });
-      scrollToBottom();
+      // We now rely on the useEffect to scroll, so this can be removed.
+      // scrollToBottom("auto"); 
     } catch (e) {
       setInputValue(trimmed);
       setSendError(e instanceof Error ? e.message : "Failed to send");
@@ -129,14 +141,22 @@ export function ChatWindow({
     }
   };
 
-  const debouncedTyping = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!conversationId || !inputValue.trim()) return;
-    if (debouncedTyping.current) clearTimeout(debouncedTyping.current);
-    setTyping({ conversationId, userId: currentUserId });
-    debouncedTyping.current = setTimeout(() => {
-      debouncedTyping.current = null;
-    }, 300);
+    if (!conversationId) return;
+    if (inputValue.trim()) {
+      if (typingTimeoutRef.current === null) {
+        setTyping({ conversationId, userId: currentUserId });
+      } else {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        typingTimeoutRef.current = null;
+      }, 1800); // Keep user typing for 1.8s after last keypress
+    }
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
   }, [inputValue, conversationId, currentUserId, setTyping]);
 
   if (isNewChat) {
@@ -195,13 +215,14 @@ export function ChatWindow({
   const title = conversation.isGroup
     ? conversation.groupName
     : otherParticipants[0]?.name ?? "Chat";
+  const isOtherOnline = !conversation.isGroup && otherParticipants[0]?.isOnline;
   const subtitle = conversation.isGroup
     ? `${otherParticipants.length} members`
-    : otherParticipants[0]?.email;
+    : isOtherOnline ? "Online" : "Offline";
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      <header className="flex items-center gap-2 border-b px-4 py-3 shrink-0">
+      <header className="flex items-center gap-3 border-b px-4 py-3 shrink-0 bg-background/70 backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -211,12 +232,12 @@ export function ChatWindow({
           <ArrowLeft className="h-5 w-5" />
         </Button>
         {conversation.isGroup ? (
-          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <Users className="h-4 w-4 text-primary" />
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Users className="h-5 w-5 text-primary" />
           </div>
         ) : (
           <div className="relative shrink-0">
-            <Avatar className="h-9 w-9">
+            <Avatar className="h-10 w-10">
               <AvatarImage src={otherParticipants[0]?.image} />
               <AvatarFallback>
                 {otherParticipants[0]?.name?.slice(0, 2).toUpperCase() ?? "?"}
@@ -224,16 +245,25 @@ export function ChatWindow({
             </Avatar>
             {otherParticipants[0]?.isOnline && (
               <span
-                className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-green-500 border-2 border-background"
+                className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background"
                 aria-hidden
               />
             )}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold truncate">{title}</h1>
+          <h1 className="font-semibold truncate text-lg">{title}</h1>
           {subtitle && (
-            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+            <p className={cn(
+              "text-xs font-medium truncate flex items-center gap-1",
+              isOtherOnline ? "text-green-500" : "text-muted-foreground"
+            )}>
+              <span className={cn(
+                "inline-block h-2 w-2 rounded-full",
+                isOtherOnline ? "bg-green-500" : "bg-gray-400"
+              )} />
+              {subtitle}
+            </p>
           )}
         </div>
       </header>
@@ -241,16 +271,18 @@ export function ChatWindow({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto flex flex-col p-4 gap-2 min-h-0"
+        className="flex-1 overflow-y-auto flex flex-col p-4 gap-4 min-h-0 relative"
       >
         {messages === undefined ? (
-          <div className="space-y-2">
+          <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
                 className={cn(
                   "h-12 rounded-2xl",
-                  i % 2 === 0 ? "self-end w-2/3 bg-primary/20" : "self-start w-2/3 bg-muted"
+                  i % 2 === 0
+                    ? "self-end w-2/3 bg-primary/10"
+                    : "self-start w-2/3 bg-muted/50"
                 )}
               />
             ))}
@@ -279,20 +311,19 @@ export function ChatWindow({
           </>
         )}
         <div ref={messagesEndRef} />
+        {showNewButton && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => scrollToBottom("smooth")}
+              className="shadow-lg rounded-full animate-bounce"
+            >
+              ↓ New messages
+            </Button>
+          </div>
+        )}
       </div>
-
-      {showNewButton && (
-        <div className="px-4 pb-2 flex justify-center">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={scrollToBottom}
-            className="shadow"
-          >
-            ↓ New messages
-          </Button>
-        </div>
-      )}
 
       {sendError && (
         <div className="px-4 py-2 flex items-center justify-between gap-2 bg-destructive/10 text-destructive text-sm">
@@ -301,32 +332,36 @@ export function ChatWindow({
             <Button variant="outline" size="sm" onClick={handleSend}>
               Retry
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setSendError(null)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSendError(null)}
+            >
               Dismiss
             </Button>
           </div>
         </div>
       )}
 
-      <div className="border-t p-3 flex gap-2 shrink-0">
+      <div className="border-t p-4 flex gap-3 shrink-0 bg-background/70 backdrop-blur-sm">
         <Input
           placeholder="Type a message..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1"
+          className="flex-1 h-11 rounded-full px-5"
           disabled={sending}
         />
         <Button
           size="icon"
           onClick={handleSend}
           disabled={!inputValue.trim() || sending}
-          className="shrink-0"
+          className="shrink-0 h-11 w-11 rounded-full"
         >
           {sending ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           )}
         </Button>
       </div>
