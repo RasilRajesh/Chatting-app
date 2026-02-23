@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -12,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserSearch } from "@/components/UserSearch";
 import { GroupCreateModal } from "@/components/GroupCreateModal";
 import { UserButton } from "@clerk/nextjs";
-import { Users, Search, MessageSquarePlus } from "lucide-react";
+import { Users, Search, MessageSquarePlus, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type User = Doc<"users">;
@@ -20,7 +21,43 @@ type User = Doc<"users">;
 export function Sidebar({ currentUser }: { currentUser: User }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: clerkUser } = useUser();
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  const updateName = useMutation(api.users.updateName);
+
+  const startEditingName = () => {
+    setEditNameValue(currentUser.name);
+    setIsEditingName(true);
+  };
+
+  const cancelEditingName = () => {
+    setIsEditingName(false);
+    setEditNameValue("");
+  };
+
+  const saveEditingName = async () => {
+    const trimmed = editNameValue.trim();
+    if (!trimmed || trimmed === currentUser.name) {
+      cancelEditingName();
+      return;
+    }
+    setNameSaving(true);
+    try {
+      // Update Convex immediately for instant UI feedback
+      await updateName({ name: trimmed });
+      // Also update Clerk so the name persists on page reload
+      // Clerk stores firstName/lastName; we write the whole string as firstName
+      await clerkUser?.update({ firstName: trimmed, lastName: "" }).catch(() => {});
+      setIsEditingName(false);
+    } catch {
+      // ignore
+    } finally {
+      setNameSaving(false);
+    }
+  };
 
   const conversations = useQuery(api.conversations.listForUser, {
     userId: currentUser._id,
@@ -72,9 +109,57 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
                 },
               }}
             />
-            <span className="font-bold text-lg truncate">
-              {currentUser.name}
-            </span>
+            {isEditingName ? (
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                <input
+                  autoFocus
+                  className="font-bold text-base border rounded px-1 py-0.5 w-full bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={editNameValue}
+                  onChange={(e) => setEditNameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveEditingName();
+                    if (e.key === "Escape") cancelEditingName();
+                  }}
+                  disabled={nameSaving}
+                  maxLength={50}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-green-600 hover:text-green-700"
+                  onClick={saveEditingName}
+                  disabled={nameSaving}
+                  title="Save name"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-destructive hover:text-destructive/80"
+                  onClick={cancelEditingName}
+                  disabled={nameSaving}
+                  title="Cancel"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 min-w-0 group">
+                <span className="font-bold text-lg truncate">
+                  {currentUser.name}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={startEditingName}
+                  title="Edit display name"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Button

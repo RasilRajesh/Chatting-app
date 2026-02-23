@@ -69,6 +69,21 @@ export const getUnreadCount = query({
   },
 });
 
+export const getAllReadsForConversation = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const reads = await ctx.db
+      .query("conversationReads")
+      .withIndex("by_conversationId", (q) =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .collect();
+    return reads.map((r) => ({ userId: r.userId as string, lastSeenAt: r.lastSeenAt }));
+  },
+});
+
 export const getUnreadCountsForConversations = query({
   args: {
     conversationIds: v.array(v.id("conversations")),

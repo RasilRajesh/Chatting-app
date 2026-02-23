@@ -19,9 +19,11 @@ export default function ChatLayout({
   const router = useRouter();
   const createOrUpdate = useMutation(api.users.createOrUpdate);
   const setOnline = useMutation(api.users.setOnline);
+  const updateName = useMutation(api.users.updateName);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
   const syncAttempted = useRef(false);
+  const prevClerkName = useRef<string | null>(null);
 
   const convexUser = useQuery(
     api.users.getByClerkId,
@@ -53,6 +55,22 @@ export default function ChatLayout({
     }, 2000);
     return () => clearTimeout(retry);
   }, [convexUser]);
+
+  // When the user updates their name in the Clerk profile popup,
+  // clerkUser.fullName changes — push that new name into Convex.
+  useEffect(() => {
+    if (!clerkUser) return;
+    const clerkName = clerkUser.fullName ?? clerkUser.firstName ?? "User";
+    if (prevClerkName.current === null) {
+      // First time — just record it, don't overwrite (createOrUpdate handles first-sync)
+      prevClerkName.current = clerkName;
+      return;
+    }
+    if (clerkName !== prevClerkName.current) {
+      prevClerkName.current = clerkName;
+      updateName({ name: clerkName }).catch(() => {});
+    }
+  }, [clerkUser, clerkUser?.fullName, clerkUser?.firstName, updateName]);
 
   // Show timeout error after 8s if user still not loaded
   useEffect(() => {
@@ -135,7 +153,7 @@ export default function ChatLayout({
     <ChatProvider currentUser={convexUser}>
       <main className="flex h-screen">
         <Sidebar currentUser={convexUser} />
-        <div className="flex-1 bg-white/50 backdrop-blur-lg">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-lg">{children}</div>
       </main>
     </ChatProvider>
   );

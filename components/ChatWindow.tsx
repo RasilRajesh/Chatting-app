@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageBubble } from "@/components/MessageBubble";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { UserSearch } from "@/components/UserSearch";
-import { Send, ArrowLeft, Users } from "lucide-react";
+import { Send, ArrowLeft, Users, Smile, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Conversation = Doc<"conversations">;
@@ -66,6 +66,32 @@ export function ChatWindow({
     isNewChat ? { exceptUserId: currentUserId } : "skip"
   );
   const getOrCreate = useMutation(api.conversations.getOrCreateOneOnOne);
+
+  const conversationReads = useQuery(
+    api.conversationReads.getAllReadsForConversation,
+    conversationId ? { conversationId } : "skip"
+  );
+
+  // Build a map of messageId → tick status for own messages
+  const getTickStatus = React.useCallback(
+    (msg: Doc<"messages">): "sent" | "delivered" | "read" => {
+      if (msg.senderId !== currentUserId) return "sent";
+      if (!conversationReads || !conversation) return "sent";
+      const otherIds = conversation.participants
+        .map(String)
+        .filter((id) => id !== String(currentUserId));
+      const otherReads = (conversationReads ?? []).filter((r) =>
+        otherIds.includes(String(r.userId))
+      );
+      const allRead =
+        otherReads.length === otherIds.length &&
+        otherReads.every((r) => r.lastSeenAt >= msg.createdAt);
+      if (allRead) return "read";
+      if (otherReads.length > 0) return "delivered";
+      return "sent";
+    },
+    [conversationReads, conversation, currentUserId]
+  );
 
   useEffect(() => {
     if (!conversationId) return;
@@ -301,6 +327,7 @@ export function ChatWindow({
                 isOwn={msg.senderId === currentUserId}
                 currentUserId={currentUserId}
                 showSenderName={conversation.isGroup}
+                tickStatus={getTickStatus(msg)}
               />
             ))}
             <TypingIndicator
@@ -343,27 +370,72 @@ export function ChatWindow({
         </div>
       )}
 
-      <div className="border-t p-4 flex gap-3 shrink-0 bg-background/70 backdrop-blur-sm">
-        <Input
-          placeholder="Type a message..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 h-11 rounded-full px-5"
-          disabled={sending}
-        />
-        <Button
-          size="icon"
-          onClick={handleSend}
-          disabled={!inputValue.trim() || sending}
-          className="shrink-0 h-11 w-11 rounded-full"
-        >
-          {sending ? (
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-        </Button>
+      {/* ── Message input bar ── */}
+      <div className="shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t">
+        <div className="flex items-end gap-2 bg-muted/60 rounded-2xl px-3 py-2 shadow-[0_2px_16px_0_rgba(0,0,0,0.08)] ring-1 ring-border/40 focus-within:ring-primary/40 focus-within:ring-2 transition-all">
+          {/* Left actions */}
+          <div className="flex items-center gap-0.5 pb-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary transition-colors"
+              tabIndex={-1}
+              title="Emoji (coming soon)"
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Text input */}
+          <textarea
+            rows={1}
+            placeholder="Type a message…"
+            value={inputValue}
+            disabled={sending}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              // auto-grow up to 5 lines
+              e.target.style.height = "auto";
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+                // reset height
+                (e.target as HTMLTextAreaElement).style.height = "auto";
+              }
+            }}
+            className="flex-1 resize-none bg-transparent text-sm leading-6 py-1 min-h-[28px] max-h-[120px] outline-none placeholder:text-muted-foreground/60 scrollbar-none"
+            style={{ overflow: "hidden" }}
+          />
+
+          {/* Right actions */}
+          <div className="flex items-center gap-1 pb-1 shrink-0">
+            <Button
+              size="icon"
+              type="button"
+              onClick={handleSend}
+              disabled={!inputValue.trim() || sending}
+              className={cn(
+                "h-8 w-8 rounded-full transition-all duration-150",
+                inputValue.trim() && !sending
+                  ? "bg-primary text-primary-foreground shadow-md hover:scale-105 active:scale-95"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              {sending ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+        <p className="text-[10px] text-center text-muted-foreground/40 mt-1.5">
+          Press <kbd className="font-mono">Enter</kbd> to send · <kbd className="font-mono">Shift+Enter</kbd> for new line
+        </p>
       </div>
     </div>
   );

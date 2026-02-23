@@ -21,6 +21,7 @@ export const createOrUpdate = mutation({
       .unique();
     const now = Date.now();
     if (existing) {
+      // Always sync from Clerk so profile name changes propagate everywhere.
       await ctx.db.patch(existing._id, {
         name: args.name,
         email: args.email,
@@ -78,6 +79,22 @@ export const getById = query({
   args: { id: v.id("users") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+export const updateName = mutation({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    const trimmed = args.name.trim();
+    if (!trimmed) throw new Error("Name cannot be empty");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, { name: trimmed });
   },
 });
 

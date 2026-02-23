@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = Doc<"messages">;
@@ -24,12 +24,14 @@ export function MessageBubble({
   isOwn,
   currentUserId,
   showSenderName,
+  tickStatus = "sent",
 }: {
   message: Message;
   sender: Doc<"users"> | null;
   isOwn: boolean;
   currentUserId: Id<"users">;
   showSenderName?: boolean;
+  tickStatus?: "sent" | "delivered" | "read";
 }) {
   const softDelete = useMutation(api.messages.softDelete);
   const canDelete = isOwn && !message.deleted;
@@ -65,12 +67,21 @@ export function MessageBubble({
             {message.deleted ? "This message was deleted" : message.content}
           </div>
           {!message.deleted && (
-            <span
-              className={cn(
-                "text-[11px] shrink-0 text-muted-foreground/70"
+            <span className="flex items-center gap-0.5 shrink-0">
+              <span className="text-[11px] text-muted-foreground/70">
+                {formatMessageTime(message.createdAt)}
+              </span>
+              {isOwn && (
+                <span className="ml-0.5">
+                  {tickStatus === "read" ? (
+                    <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+                  ) : tickStatus === "delivered" ? (
+                    <CheckCheck className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  )}
+                </span>
               )}
-            >
-              {formatMessageTime(message.createdAt)}
             </span>
           )}
         </div>
