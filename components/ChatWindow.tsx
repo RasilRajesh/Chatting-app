@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
@@ -14,6 +15,9 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { UserSearch } from "@/components/UserSearch";
 import { Send, ArrowLeft, Users, Smile, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Dynamically import so it's never server-rendered (it uses browser APIs)
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 type Conversation = Doc<"conversations">;
 type User = Doc<"users">;
@@ -32,11 +36,14 @@ export function ChatWindow({
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [atBottom, setAtBottom] = useState(true);
   const [showNewButton, setShowNewButton] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const prevMessageCountRef = useRef(0);
 
   const messages = useQuery(
@@ -98,6 +105,21 @@ export function ChatWindow({
     markRead({ conversationId, userId: currentUserId });
   }, [conversationId, currentUserId, markRead]);
 
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(e.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showEmojiPicker]);
+
   const scrollToBottom = useCallback((behavior: "smooth" | "auto" = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
     setAtBottom(true);
@@ -142,6 +164,9 @@ export function ChatWindow({
     const trimmed = inputValue.trim();
     if (!trimmed || !conversationId) return;
     setInputValue("");
+    setShowEmojiPicker(false);
+    // reset textarea height
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setSendError(null);
     setSending(true);
     try {
@@ -371,7 +396,47 @@ export function ChatWindow({
       )}
 
       {/* ── Message input bar ── */}
-      <div className="shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t">
+      <div className="relative shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t">
+        {/* Emoji picker popup */}
+        {showEmojiPicker && (
+          <div
+            ref={emojiPickerRef}
+            className="absolute bottom-full mb-2 left-0 z-50 shadow-xl rounded-2xl overflow-hidden"
+          >
+            <EmojiPicker
+              onEmojiClick={(emojiData) => {
+                const emoji = emojiData.emoji;
+                const ta = textareaRef.current;
+                if (ta) {
+                  const start = ta.selectionStart ?? inputValue.length;
+                  const end = ta.selectionEnd ?? inputValue.length;
+                  const newVal =
+                    inputValue.slice(0, start) + emoji + inputValue.slice(end);
+                  setInputValue(newVal);
+                  // Restore cursor position after React re-render
+                  requestAnimationFrame(() => {
+                    ta.focus();
+                    ta.setSelectionRange(
+                      start + emoji.length,
+                      start + emoji.length
+                    );
+                    ta.style.height = "auto";
+                    ta.style.height =
+                      Math.min(ta.scrollHeight, 120) + "px";
+                  });
+                } else {
+                  setInputValue((v) => v + emoji);
+                }
+              }}
+              lazyLoadEmojis
+              searchDisabled={false}
+              skinTonesDisabled
+              height={380}
+              width={320}
+            />
+          </div>
+        )}
+
         <div className="flex items-end gap-2 bg-muted/60 rounded-2xl px-3 py-2 shadow-[0_2px_16px_0_rgba(0,0,0,0.08)] ring-1 ring-border/40 focus-within:ring-primary/40 focus-within:ring-2 transition-all">
           {/* Left actions */}
           <div className="flex items-center gap-0.5 pb-1 shrink-0">
@@ -379,9 +444,14 @@ export function ChatWindow({
               variant="ghost"
               size="icon"
               type="button"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary transition-colors"
-              tabIndex={-1}
-              title="Emoji (coming soon)"
+              className={cn(
+                "h-8 w-8 rounded-full transition-colors",
+                showEmojiPicker
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-primary"
+              )}
+              onClick={() => setShowEmojiPicker((v) => !v)}
+              title="Emoji"
             >
               <Smile className="h-5 w-5" />
             </Button>
@@ -389,6 +459,7 @@ export function ChatWindow({
 
           {/* Text input */}
           <textarea
+            ref={textareaRef}
             rows={1}
             placeholder="Type a message…"
             value={inputValue}
