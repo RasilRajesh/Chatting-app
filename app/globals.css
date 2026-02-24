@@ -80,64 +80,110 @@
   --font-main: ui-monospace, SFMono-Regular, monospace !important;
 }
 
-/* Accent Themes */
+.font-theme-playful {
+  --font-main: "Comic Sans MS", "Comic Sans", cursive, sans-serif !important;
+}
+
+/* Accent Themes - Lighter & More Vibrant */
 .accent-theme-blue {
-  --primary: 217.2 91.2% 59.8% !important;
-  --ring: 217.2 91.2% 59.8% !important;
+  --primary: 213 94% 68% !important;
+  --ring: 213 94% 68% !important;
 }
 
 .accent-theme-rose {
-  --primary: 346.8 77.2% 49.8% !important;
-  --ring: 346.8 77.2% 49.8% !important;
+  --primary: 340 82% 65% !important;
+  --ring: 340 82% 65% !important;
 }
 
 .accent-theme-green {
-  --primary: 142.1 76.2% 36.3% !important;
-  --ring: 142.1 76.2% 36.3% !important;
+  --primary: 156 72% 45% !important;
+  --ring: 156 72% 45% !important;
 }
 
 .accent-theme-violet {
-  --primary: 262.1 83.3% 57.8% !important;
-  --ring: 262.1 83.3% 57.8% !important;
+  --primary: 265 89% 72% !important;
+  --ring: 265 89% 72% !important;
 }
 
 .accent-theme-orange {
-  --primary: 24.6 95% 53.1% !important;
-  --ring: 24.6 95% 53.1% !important;
+  --primary: 32 95% 62% !important;
+  --ring: 32 95% 62% !important;
 }
 
 .accent-theme-slate {
-  --primary: 215.4 16.3% 46.9% !important;
-  --ring: 215.4 16.3% 46.9% !important;
+  --primary: 215 25% 65% !important;
+  --ring: 215 25% 65% !important;
 }
 
 /* Background Themes */
+.bg-theme-default {
+  --chat-bg-color: hsl(var(--background)) !important;
+  --chat-bubble-tint: transparent !important;
+}
+
 .bg-theme-whatsapp {
   --chat-bg-color: #e5ddd5 !important;
+  --chat-bubble-tint: rgba(37, 211, 102, 0.05) !important;
 }
 
 .dark .bg-theme-whatsapp {
   --chat-bg-color: #0b141a !important;
+  --chat-bubble-tint: rgba(37, 211, 102, 0.1) !important;
 }
 
 .bg-theme-blue {
   --chat-bg-color: #d1e1f0 !important;
+  --chat-bubble-tint: rgba(30, 64, 175, 0.05) !important;
 }
 
 .dark .bg-theme-blue {
   --chat-bg-color: #1a2a3a !important;
+  --chat-bubble-tint: rgba(30, 64, 175, 0.15) !important;
 }
 
 .bg-theme-slate {
   --chat-bg-color: #f1f5f9 !important;
+  --chat-bubble-tint: rgba(71, 85, 105, 0.05) !important;
 }
 
 .dark .bg-theme-slate {
   --chat-bg-color: #0f172a !important;
+  --chat-bubble-tint: rgba(71, 85, 105, 0.15) !important;
 }
 
-.bg-theme-default {
-  --chat-bg-color: hsl(var(--background)) !important;
+.bg-theme-midnight {
+  --chat-bg-color: #020617 !important;
+  --chat-bubble-tint: rgba(30, 58, 138, 0.2) !important;
+}
+
+.bg-theme-olive {
+  --chat-bg-color: #f7fee7 !important;
+  --chat-bubble-tint: rgba(101, 163, 13, 0.1) !important;
+}
+
+.dark .bg-theme-olive {
+  --chat-bg-color: #1a2e05 !important;
+  --chat-bubble-tint: rgba(101, 163, 13, 0.2) !important;
+}
+
+.bg-theme-lavender {
+  --chat-bg-color: #f5f3ff !important;
+  --chat-bubble-tint: rgba(139, 92, 246, 0.1) !important;
+}
+
+.dark .bg-theme-lavender {
+  --chat-bg-color: #1e1b4b !important;
+  --chat-bubble-tint: rgba(139, 92, 246, 0.2) !important;
+}
+
+.bg-theme-sepia {
+  --chat-bg-color: #fdf6e3 !important;
+  --chat-bubble-tint: rgba(180, 83, 9, 0.1) !important;
+}
+
+.dark .bg-theme-sepia {
+  --chat-bg-color: #2b261b !important;
+  --chat-bubble-tint: rgba(180, 83, 9, 0.2) !important;
 }
 
 /* Bubble Radius Themes */

@@ -51,12 +51,16 @@ export const MessageBubble = memo(function MessageBubble({
       )}
       <div
         className={cn(
-          "group relative px-3.5 py-2 shadow-sm message-bubble-content overflow-hidden transition-all duration-300",
+          "group relative px-3.5 py-2 shadow-sm message-bubble-content transition-all duration-300",
           isOwn
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-foreground",
-          message.deleted && "bg-transparent border border-dashed text-foreground/50"
+          message.deleted && "bg-transparent border border-dashed text-foreground/50 text-foreground/70"
         )}
+        style={{
+          backgroundColor: isOwn ? undefined : "rgba(var(--muted), 0.8)",
+          boxShadow: !isOwn ? "inset 0 0 40px var(--chat-bubble-tint)" : undefined,
+        }}
       >
         <div className="flex items-end gap-2">
           <div
@@ -89,18 +93,16 @@ export const MessageBubble = memo(function MessageBubble({
             </span>
           )}
         </div>
+
         {!message.deleted && (
-          <Reactions messageId={message._id} userId={currentUserId} />
-        )}
-        {!message.deleted && (
-          <div className="absolute -top-4 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute -top-4 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             {canDelete && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-full"
+                    className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -123,6 +125,19 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
         )}
       </div>
+
+      {!message.deleted && (
+        <div className={cn(
+          "relative -mt-3.5 px-1 z-20",
+          isOwn ? "mr-2" : "ml-2"
+        )}>
+          <Reactions
+            messageId={message._id}
+            userId={currentUserId}
+            isOwn={isOwn}
+          />
+        </div>
+      )}
     </div>
   );
 });

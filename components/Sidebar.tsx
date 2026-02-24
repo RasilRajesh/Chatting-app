@@ -96,12 +96,13 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
     <>
       <aside
         className={cn(
-          "flex flex-col w-full sm:w-80 border-r shrink-0",
+          "flex flex-col w-full sm:w-80 border-r shrink-0 transition-colors duration-300",
           "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-10 max-sm:bg-background/95 max-sm:backdrop-blur-sm",
           pathname?.startsWith("/chat/") && pathname !== "/chat"
             ? "max-sm:hidden"
             : ""
         )}
+        style={{ backgroundColor: "var(--chat-bubble-tint)" }}
       >
         <div className="p-4 border-b flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">

@@ -417,12 +417,15 @@ export function ChatWindow({
       )}
 
       {/* ── Message input bar ── */}
-      <div className="relative shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t">
+      <div
+        className="relative shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t transition-colors duration-300"
+        style={{ backgroundColor: "var(--chat-bubble-tint)" }}
+      >
         {/* Emoji picker popup */}
         {showEmojiPicker && (
           <div
             ref={emojiPickerRef}
-            className="absolute bottom-full mb-2 left-0 z-50 shadow-xl rounded-2xl overflow-hidden"
+            className="absolute bottom-full mb-2 left-0 z-[100] shadow-2xl rounded-2xl animate-in fade-in zoom-in slide-in-from-bottom-4 duration-300"
           >
             <EmojiPicker
               onEmojiClick={(emojiData) => {
@@ -452,8 +455,9 @@ export function ChatWindow({
               lazyLoadEmojis
               searchDisabled={false}
               skinTonesDisabled
-              height={380}
-              width={320}
+              height={400}
+              width={350}
+              previewConfig={{ showPreview: false }}
             />
           </div>
         )}
