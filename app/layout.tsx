@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Real-time messaging app",
 };
 
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -16,10 +18,12 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className="antialiased min-h-screen">
           <ErrorBoundary>
-            <ConvexClientProvider>{children}</ConvexClientProvider>
+            <ConvexClientProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </ConvexClientProvider>
           </ErrorBoundary>
         </body>
       </html>

@@ -337,7 +337,13 @@ export function ChatWindow({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto flex flex-col p-4 gap-4 min-h-0 relative"
+        className={cn(
+          "flex-1 overflow-y-auto flex flex-col p-4 gap-4 min-h-0 relative transition-all duration-300",
+          userMap[currentUserId]?.themeSettings?.chatBackground
+            ? `bg-theme-${userMap[currentUserId].themeSettings.chatBackground}`
+            : "bg-theme-default"
+        )}
+        style={{ backgroundColor: "var(--chat-bg-color)" }}
       >
         {messages === undefined ? (
           <div className="space-y-4">

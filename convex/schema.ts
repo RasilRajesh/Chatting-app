@@ -13,6 +13,8 @@ export default defineSchema({
       v.object({
         accentColor: v.string(),
         bubbleStyle: v.string(),
+        fontFamily: v.optional(v.string()),
+        chatBackground: v.optional(v.string()),
         mode: v.string(),
       })
     ),

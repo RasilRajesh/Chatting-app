@@ -51,11 +51,11 @@ export const MessageBubble = memo(function MessageBubble({
       )}
       <div
         className={cn(
-          "group relative rounded-2xl px-3.5 py-2 shadow-sm",
+          "group relative px-3.5 py-2 shadow-sm message-bubble-content overflow-hidden transition-all duration-300",
           isOwn
-            ? "bg-whatsapp-green-light rounded-br-lg"
-            : "bg-muted rounded-bl-lg",
-          message.deleted && "bg-transparent border border-dashed"
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground",
+          message.deleted && "bg-transparent border border-dashed text-foreground/50"
         )}
       >
         <div className="flex items-end gap-2">
@@ -69,17 +69,20 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
           {!message.deleted && (
             <span className="flex items-center gap-0.5 shrink-0">
-              <span className="text-[11px] text-muted-foreground/70">
+              <span className={cn(
+                "text-[11px]",
+                isOwn ? "text-primary-foreground/70" : "text-muted-foreground/70"
+              )}>
                 {formatMessageTime(message.createdAt)}
               </span>
               {isOwn && (
                 <span className="ml-0.5">
                   {tickStatus === "read" ? (
-                    <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+                    <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
                   ) : tickStatus === "delivered" ? (
-                    <CheckCheck className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <CheckCheck className={cn("h-3.5 w-3.5", isOwn ? "text-primary-foreground/60" : "text-muted-foreground/60")} />
                   ) : (
-                    <Check className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <Check className={cn("h-3.5 w-3.5", isOwn ? "text-primary-foreground/60" : "text-muted-foreground/60")} />
                   )}
                 </span>
               )}

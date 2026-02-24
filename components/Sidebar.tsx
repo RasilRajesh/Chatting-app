@@ -13,8 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserSearch } from "@/components/UserSearch";
 import { GroupCreateModal } from "@/components/GroupCreateModal";
 import { NewChatModal } from "@/components/NewChatModal";
+import { ThemeSettingsModal } from "@/components/ThemeSettingsModal";
 import { UserButton } from "@clerk/nextjs";
-import { Users, Search, MessageSquarePlus, Pencil, Check, X } from "lucide-react";
+import { Users, Search, MessageSquarePlus, Pencil, Check, X, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type User = Doc<"users">;
@@ -25,6 +26,7 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
   const { user: clerkUser } = useUser();
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
@@ -182,6 +184,15 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
             >
               <Users className="h-5 w-5" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setThemeModalOpen(true)}
+              title="Theme settings"
+            >
+              <Palette className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
@@ -227,6 +238,12 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
         open={groupModalOpen}
         onOpenChange={setGroupModalOpen}
         currentUserId={currentUser._id}
+      />
+
+      <ThemeSettingsModal
+        open={themeModalOpen}
+        onOpenChange={setThemeModalOpen}
+        currentUser={currentUser}
       />
     </>
   );

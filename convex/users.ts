@@ -146,3 +146,31 @@ export const getByIds = query({
     return result;
   },
 });
+
+export const updateTheme = mutation({
+  args: {
+    accentColor: v.string(),
+    bubbleStyle: v.string(),
+    fontFamily: v.optional(v.string()),
+    chatBackground: v.optional(v.string()),
+    mode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, {
+      themeSettings: {
+        accentColor: args.accentColor,
+        bubbleStyle: args.bubbleStyle,
+        fontFamily: args.fontFamily,
+        chatBackground: args.chatBackground,
+        mode: args.mode,
+      },
+    });
+  },
+});
