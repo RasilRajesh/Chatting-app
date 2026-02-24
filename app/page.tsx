@@ -10,7 +10,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!isLoaded) return;
     if (userId) {
-      router.replace("/chat/new");
+      router.replace("/chat");
     } else {
       router.replace("/sign-in");
     }

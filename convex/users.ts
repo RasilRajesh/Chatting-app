@@ -70,8 +70,45 @@ export const getByClerkId = query({
 export const listExcept = query({
   args: { exceptUserId: v.id("users") },
   handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .order("desc")
+      .take(100) // Limit to 100 users for initial list
+      .then((users) => users.filter((u) => u._id !== args.exceptUserId));
+  },
+});
+
+export const search = query({
+  args: {
+    query: v.string(),
+    exceptUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const q = args.query.trim().toLowerCase();
+
+    if (!q) {
+      // Instant return for empty query
+      return await ctx.db
+        .query("users")
+        .order("desc")
+        .take(10)
+        .then(users => users.filter(u => u._id !== args.exceptUserId));
+    }
+
+    // Still need to collect for fuzzy match, but we can limit the search
     const all = await ctx.db.query("users").collect();
-    return all.filter((u) => u._id !== args.exceptUserId);
+    const results = [];
+    for (const u of all) {
+      if (u._id === args.exceptUserId) continue;
+      if (
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
+      ) {
+        results.push(u);
+        if (results.length >= 20) break; // Limit search results
+      }
+    }
+    return results;
   },
 });
 

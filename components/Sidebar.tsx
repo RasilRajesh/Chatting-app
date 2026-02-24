@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserSearch } from "@/components/UserSearch";
 import { GroupCreateModal } from "@/components/GroupCreateModal";
+import { NewChatModal } from "@/components/NewChatModal";
 import { UserButton } from "@clerk/nextjs";
 import { Users, Search, MessageSquarePlus, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
   const router = useRouter();
   const { user: clerkUser } = useUser();
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [newChatModalOpen, setNewChatModalOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
@@ -50,7 +52,7 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
       await updateName({ name: trimmed });
       // Also update Clerk so the name persists on page reload
       // Clerk stores firstName/lastName; we write the whole string as firstName
-      await clerkUser?.update({ firstName: trimmed, lastName: "" }).catch(() => {});
+      await clerkUser?.update({ firstName: trimmed, lastName: "" }).catch(() => { });
       setIsEditingName(false);
     } catch {
       // ignore
@@ -94,7 +96,7 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
         className={cn(
           "flex flex-col w-full sm:w-80 border-r shrink-0",
           "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-10 max-sm:bg-background/95 max-sm:backdrop-blur-sm",
-          pathname?.startsWith("/chat/") && pathname !== "/chat/new"
+          pathname?.startsWith("/chat/") && pathname !== "/chat"
             ? "max-sm:hidden"
             : ""
         )}
@@ -166,7 +168,7 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              onClick={() => router.push("/chat/new")}
+              onClick={() => setNewChatModalOpen(true)}
               title="New chat"
             >
               <MessageSquarePlus className="h-5 w-5" />
@@ -215,17 +217,22 @@ export function Sidebar({ currentUser }: { currentUser: User }) {
         </nav>
       </aside>
 
+      <NewChatModal
+        open={newChatModalOpen}
+        onOpenChange={setNewChatModalOpen}
+        currentUserId={currentUser._id}
+      />
+
       <GroupCreateModal
         open={groupModalOpen}
         onOpenChange={setGroupModalOpen}
         currentUserId={currentUser._id}
-        allUsers={allUsers ?? []}
       />
     </>
   );
 }
 
-function ConversationItem({
+const ConversationItem = memo(function ConversationItem({
   conversation,
   currentUser,
   unreadCount,
@@ -257,12 +264,11 @@ function ConversationItem({
     lastMessage === null // Message was deleted
       ? "Message deleted"
       : lastMessage
-      ? `${lastMessage.senderId === currentUser._id ? "You: " : ""}${
-          lastMessage.content.length > 30
-            ? lastMessage.content.substring(0, 30) + "..."
-            : lastMessage.content
+        ? `${lastMessage.senderId === currentUser._id ? "You: " : ""}${lastMessage.content.length > 30
+          ? lastMessage.content.substring(0, 30) + "..."
+          : lastMessage.content
         }`
-      : "No messages yet";
+        : "No messages yet";
 
   return (
     <Link
@@ -319,8 +325,8 @@ function ConversationItem({
             "text-sm truncate",
             isActive ? "text-primary-foreground/80" : "text-muted-foreground",
             unreadCount > 0 &&
-              !isActive &&
-              "font-semibold text-foreground/80"
+            !isActive &&
+            "font-semibold text-foreground/80"
           )}
         >
           {lastMessageContent}
@@ -328,4 +334,4 @@ function ConversationItem({
       </div>
     </Link>
   );
-}
+});

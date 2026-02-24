@@ -51,6 +51,7 @@ export const createGroup = mutation({
     creatorId: v.id("users"),
     name: v.string(),
     participantIds: v.array(v.id("users")),
+    groupImage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -60,6 +61,7 @@ export const createGroup = mutation({
       participants,
       isGroup: true,
       groupName: args.name,
+      groupImage: args.groupImage,
     });
     return id;
   },

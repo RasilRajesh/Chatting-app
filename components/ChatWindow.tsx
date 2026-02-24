@@ -127,36 +127,51 @@ export function ChatWindow({
   }, []);
 
   useEffect(() => {
-    if (!messages || messages.length === 0) return;
+    if (!messages || messages.length === 0) {
+      prevMessageCountRef.current = 0;
+      return;
+    }
+
+    const isNewer = messages.length > prevMessageCountRef.current;
+    if (!isNewer) return; // Don't snap on message updates (reactions, deletes)
 
     const lastMessage = messages[messages.length - 1];
     const isOwnMessage = lastMessage.senderId === currentUserId;
-    const isNewer = messages.length > prevMessageCountRef.current;
 
     if (isOwnMessage) {
-      // Always scroll to bottom if we sent the message
       scrollToBottom("auto");
     } else if (atBottom) {
-      // Scroll if we're already at the bottom
       scrollToBottom();
-    } else if (isNewer) {
-      // Show button if new messages arrive and we're scrolled up
+    } else {
       setShowNewButton(true);
     }
 
     prevMessageCountRef.current = messages.length;
   }, [messages, atBottom, currentUserId, scrollToBottom]);
 
+  const lastScrollTimeRef = useRef(0);
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
-    // A little extra space to ensure it's "at the bottom"
-    const threshold = 120; 
+
+    const now = Date.now();
+    if (now - lastScrollTimeRef.current < 16) return;
+    lastScrollTimeRef.current = now;
+
+    const threshold = 120;
     const atBottomNow =
       el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
-    setAtBottom(atBottomNow);
+
+    setAtBottom((prev) => {
+      if (prev === atBottomNow) return prev;
+      return atBottomNow;
+    });
+
     if (atBottomNow) {
-      setShowNewButton(false);
+      setShowNewButton((prev) => {
+        if (!prev) return prev;
+        return false;
+      });
     }
   }, []);
 
@@ -218,7 +233,7 @@ export function ChatWindow({
             variant="ghost"
             size="icon"
             className="sm:hidden"
-            onClick={() => router.push("/chat/new")}
+            onClick={() => router.push("/chat")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -240,7 +255,7 @@ export function ChatWindow({
             </p>
           ) : (
             <UserSearch
-              users={allUsersForNewChat}
+              currentUserId={currentUserId}
               onSelect={async (user) => {
                 const id = await getOrCreate({
                   userId: currentUserId,
@@ -278,7 +293,7 @@ export function ChatWindow({
           variant="ghost"
           size="icon"
           className="sm:hidden"
-          onClick={() => router.push("/chat/new")}
+          onClick={() => router.push("/chat")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢"] as const;
 
-export function Reactions({
+export const Reactions = memo(function Reactions({
   messageId,
   userId,
 }: {
@@ -68,4 +68,4 @@ export function Reactions({
       )}
     </div>
   );
-}
+});

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useParams } from "next/navigation";
+import React, { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -11,14 +11,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ConversationPage() {
   const params = useParams();
+  const router = useRouter();
   const conversationId = params.conversationId as string;
   const id = conversationId as Id<"conversations">;
   const { currentUserId } = useChatContext();
 
+  const isInvalidId = !conversationId || conversationId === "new" || conversationId.length < 5;
+
   const conversation = useQuery(
     api.conversations.getById,
-    conversationId ? { id } : "skip"
+    !isInvalidId ? { id } : "skip"
   );
+
+  useEffect(() => {
+    if (isInvalidId) {
+      router.replace("/chat");
+    }
+  }, [isInvalidId, router]);
+
+  if (isInvalidId) {
+    return null;
+  }
 
   const otherParticipantIds =
     conversation?.participants.filter((p: Id<"users">) => p !== currentUserId) ?? [];

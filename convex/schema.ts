@@ -9,12 +9,20 @@ export default defineSchema({
     image: v.string(),
     isOnline: v.boolean(),
     createdAt: v.number(),
+    themeSettings: v.optional(
+      v.object({
+        accentColor: v.string(),
+        bubbleStyle: v.string(),
+        mode: v.string(),
+      })
+    ),
   }).index("by_clerkId", ["clerkId"]),
 
   conversations: defineTable({
     participants: v.array(v.id("users")),
     isGroup: v.boolean(),
     groupName: v.optional(v.string()),
+    groupImage: v.optional(v.string()),
     lastMessage: v.optional(v.string()),
     lastMessageTime: v.optional(v.number()),
   })

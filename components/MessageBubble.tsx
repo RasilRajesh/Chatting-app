@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 type Message = Doc<"messages">;
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   message,
   sender,
   isOwn,
@@ -121,4 +122,4 @@ export function MessageBubble({
       </div>
     </div>
   );
-}
+});
