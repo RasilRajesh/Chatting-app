@@ -45,9 +45,11 @@ function ThemeInjector({ children }: { children: React.ReactNode }) {
         if (isValidToken(accentColor)) classesToAdd.push(`accent-theme-${accentColor}`);
         if (isValidToken(fontFamily)) classesToAdd.push(`font-theme-${fontFamily}`);
         if (isValidToken(bubbleStyle)) classesToAdd.push(`bubble-theme-${bubbleStyle}`);
-        if (isValidToken(chatBackground)) classesToAdd.push(`bg-theme-${chatBackground}`);
+        // bg-theme classes are intentionally NOT applied globally — they are applied
+        // only on the messages container div inside ChatWindow so they don't bleed
+        // into the sidebar/layout and cause mixed-color issues in dark mode.
 
-        // Apply theme classes to BOTH html and body for maximum reliability
+        // Apply accent + font + bubble classes to BOTH html and body for maximum reliability
         const elements = [document.documentElement, document.body];
 
         elements.forEach(el => {
@@ -56,7 +58,7 @@ function ThemeInjector({ children }: { children: React.ReactNode }) {
                 c.includes('accent-theme-') ||
                 c.includes('font-theme-') ||
                 c.includes('bubble-theme-') ||
-                c.includes('bg-theme-')
+                c.includes('bg-theme-')  // also clean up any previously applied bg classes
             );
             if (classesToRemove.length > 0) el.classList.remove(...classesToRemove);
 

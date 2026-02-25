@@ -211,14 +211,12 @@ export function ChatWindow({
   useEffect(() => {
     if (!conversationId) return;
     if (inputValue.trim()) {
-      if (typingTimeoutRef.current === null) {
-        setTyping({ conversationId, userId: currentUserId });
-      } else {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      // Always fire setTyping so the server-side 2 s window keeps refreshing
+      setTyping({ conversationId, userId: currentUserId }).catch(() => {});
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         typingTimeoutRef.current = null;
-      }, 1800); // Keep user typing for 1.8s after last keypress
+      }, 1800);
     }
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -364,24 +362,25 @@ export function ChatWindow({
             No messages yet. Say hello!
           </div>
         ) : (
-          <>
-            {messages.map((msg: Doc<"messages">) => (
-              <MessageBubble
-                key={msg._id}
-                message={msg}
-                sender={userMap[msg.senderId] ?? null}
-                isOwn={msg.senderId === currentUserId}
-                currentUserId={currentUserId}
-                showSenderName={conversation.isGroup}
-                tickStatus={getTickStatus(msg)}
-              />
-            ))}
-            <TypingIndicator
-              conversationId={conversationId}
-              excludeUserId={currentUserId}
-              users={participantDocs ?? []}
+          messages.map((msg: Doc<"messages">) => (
+            <MessageBubble
+              key={msg._id}
+              message={msg}
+              sender={userMap[msg.senderId] ?? null}
+              isOwn={msg.senderId === currentUserId}
+              currentUserId={currentUserId}
+              showSenderName={conversation.isGroup}
+              tickStatus={getTickStatus(msg)}
             />
-          </>
+          ))
+        )}
+        {/* Always show typing indicator so it appears even with 0 messages */}
+        {conversationId && (
+          <TypingIndicator
+            conversationId={conversationId}
+            excludeUserId={currentUserId}
+            users={participantDocs ?? []}
+          />
         )}
         <div ref={messagesEndRef} />
         {showNewButton && (
@@ -419,7 +418,6 @@ export function ChatWindow({
       {/* ── Message input bar ── */}
       <div
         className="relative shrink-0 px-4 py-3 bg-background/80 backdrop-blur-md border-t transition-colors duration-300"
-        style={{ backgroundColor: "var(--chat-bubble-tint)" }}
       >
         {/* Emoji picker popup */}
         {showEmojiPicker && (

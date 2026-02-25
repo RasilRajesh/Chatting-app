@@ -81,14 +81,39 @@ export default function ChatLayout({
 
   useEffect(() => {
     if (!clerkId) return;
+    // Mark online immediately when the layout mounts
     setOnline({ clerkId, isOnline: true }).catch(() => {});
-    const handleUnload = () => {
-      setOnline({ clerkId, isOnline: false }).catch(() => {});
+
+    const goOffline = () => setOnline({ clerkId, isOnline: false }).catch(() => {});
+    const goOnline  = () => setOnline({ clerkId, isOnline: true  }).catch(() => {});
+
+    // visibilitychange fires reliably when the tab is hidden/shown (including mobile)
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        goOffline();
+      } else {
+        goOnline();
+      }
     };
-    window.addEventListener("beforeunload", handleUnload);
+
+    // pagehide is more reliable than beforeunload for actual navigation / close
+    const handlePageHide = () => goOffline();
+
+    // window blur/focus tracks switching away from the window on desktop
+    const handleBlur  = () => goOffline();
+    const handleFocus = () => goOnline();
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("blur",  handleBlur);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-      setOnline({ clerkId, isOnline: false }).catch(() => {});
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("blur",  handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      goOffline();
     };
   }, [clerkId, setOnline]);
 
@@ -98,16 +123,16 @@ export default function ChatLayout({
 
   if (!isLoaded || !isSignedIn) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (convexUser === undefined) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -115,7 +140,7 @@ export default function ChatLayout({
   if (!convexUser) {
     if (timedOut || syncError) {
       return (
-        <div className="flex h-screen items-center justify-center bg-white p-4">
+        <div className="flex h-screen items-center justify-center bg-background p-4">
           <div className="w-full max-w-md rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
             <h1 className="text-xl font-semibold text-destructive">
               Account Sync Failed
@@ -140,9 +165,9 @@ export default function ChatLayout({
       );
     }
     return (
-      <div className="flex h-screen items-center justify-center bg-white">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="ml-3 text-sm text-muted-foreground">Syncing account...</p>
         </div>
       </div>
@@ -151,9 +176,9 @@ export default function ChatLayout({
 
   return (
     <ChatProvider currentUser={convexUser}>
-      <main className="flex h-screen">
+      <main className="flex h-screen bg-background">
         <Sidebar currentUser={convexUser} />
-        <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-lg">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 bg-background">{children}</div>
       </main>
     </ChatProvider>
   );
